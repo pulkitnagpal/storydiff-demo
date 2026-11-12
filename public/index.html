@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Linkbox</title>
+<style>body{font:15px system-ui;max-width:640px;margin:40px auto;padding:0 16px}li{display:flex;gap:8px;align-items:center;padding:6px 0}li a{flex:1}</style></head>
+<body>
+<h1>Linkbox</h1>
+<form id="add"><input id="url" placeholder="https://…" required> <input id="title" placeholder="Title"> <button>Save</button></form>
+<ul id="list"></ul>
+<script>
+async function load() {
+  const links = await (await fetch('/api/links')).json();
+  document.getElementById('list').innerHTML = links.map(l =>
+    `<li><a href="${l.url}">${l.title}</a><button data-id="${l.id}">Delete</button></li>`).join('');
+}
+document.getElementById('add').onsubmit = async (e) => {
+  e.preventDefault();
+  await fetch('/api/links', { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ url: url.value, title: title.value }) });
+  e.target.reset(); load();
+};
+document.getElementById('list').onclick = async (e) => {
+  if (!e.target.dataset.id) return;
+  await fetch('/api/links/' + e.target.dataset.id, { method: 'DELETE' }); load();
+};
+load();
+</script>
+</body>
+</html>
