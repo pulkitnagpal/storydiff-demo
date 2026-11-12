@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>Linkbox</title>
-<style>body{font:15px system-ui;max-width:640px;margin:40px auto;padding:0 16px}li{display:flex;gap:8px;align-items:center;padding:6px 0}li a{flex:1}</style></head>
+<style>body{font:15px system-ui;max-width:640px;margin:40px auto;padding:0 16px}li{display:flex;gap:8px;align-items:center;padding:6px 0}li a{flex:1}.star{border:0;background:none;font-size:18px;cursor:pointer;color:#999}.star[aria-pressed="true"]{color:#e6a700}</style></head>
 <body>
 <h1>Linkbox</h1>
 <form id="add"><input id="url" placeholder="https://…" required> <input id="title" placeholder="Title"> <button>Save</button></form>
@@ -9,8 +9,12 @@
 <script>
 async function load() {
   const links = await (await fetch('/api/links')).json();
+  // The API returns newest first; on the page, starred links go on top (stable sort keeps newest first within each group).
+  links.sort((a, b) => b.starred - a.starred);
   document.getElementById('list').innerHTML = links.map(l =>
-    `<li><a href="${l.url}">${l.title}</a><button data-id="${l.id}">Delete</button></li>`).join('');
+    `<li><button class="star" data-star="${l.id}" aria-pressed="${l.starred}"
+      aria-label="${l.starred ? 'Unstar' : 'Star'}" title="${l.starred ? 'Unstar' : 'Star'}">${l.starred ? '★' : '☆'}</button>` +
+    `<a href="${l.url}">${l.title}</a><button data-id="${l.id}">Delete</button></li>`).join('');
 }
 document.getElementById('add').onsubmit = async (e) => {
   e.preventDefault();
@@ -19,6 +23,13 @@ document.getElementById('add').onsubmit = async (e) => {
   e.target.reset(); load();
 };
 document.getElementById('list').onclick = async (e) => {
+  const star = e.target.dataset.star;
+  if (star) {
+    const starred = e.target.getAttribute('aria-pressed') !== 'true';
+    await fetch('/api/links/' + star, { method: 'PATCH', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ starred }) });
+    return load();
+  }
   if (!e.target.dataset.id) return;
   await fetch('/api/links/' + e.target.dataset.id, { method: 'DELETE' }); load();
 };
