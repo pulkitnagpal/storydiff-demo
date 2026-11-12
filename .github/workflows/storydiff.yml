@@ -1,0 +1,15 @@
+name: storydiff
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+permissions:
+  contents: write       # card images go on the storydiff-cards branch
+  pull-requests: write  # the one sticky comment
+  statuses: write       # the storydiff status
+jobs:
+  storydiff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: pulkitnagpal/storydiff@main
+        with:
+          node-version: "24"
