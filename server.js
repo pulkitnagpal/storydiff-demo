@@ -18,6 +18,13 @@ export function makeServer(db = openDb()) {
       return send(201, db.add(body.url, body.title || body.url));
     }
     const m = url.pathname.match(/^\/api\/links\/(\d+)$/);
+    if (req.method === 'PATCH' && m) {
+      let raw = ''; for await (const c of req) raw += c;
+      let body; try { body = JSON.parse(raw); } catch { return send(400, { error: 'invalid json' }); }
+      if (typeof body.starred !== 'boolean') return send(400, { error: 'starred must be a boolean' });
+      const link = db.setStarred(Number(m[1]), body.starred);
+      return link ? send(200, link) : send(404, { error: 'not found' });
+    }
     if (req.method === 'DELETE' && m) return db.remove(Number(m[1])) ? send(204, {}) : send(404, { error: 'not found' });
     send(404, { error: 'not found' });
   });
